@@ -38,7 +38,6 @@ class Board:
                     print_str += " "
                 print_str += " "
             print_str += "\n"
-        print(print_str)
         return print_str
 
     @classmethod
