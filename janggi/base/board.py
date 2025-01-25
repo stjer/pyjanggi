@@ -8,7 +8,6 @@ from .camp import Camp
 from .formation import Formation
 from .location import Location
 
-
 class Board:
     """
     Simple board class used for the game of Janggi. Contains and handles a single 
@@ -39,6 +38,7 @@ class Board:
                     print_str += " "
                 print_str += " "
             print_str += "\n"
+        print(print_str)
         return print_str
 
     @classmethod
@@ -68,6 +68,60 @@ class Board:
 
         return board
 
+    @classmethod
+    def board_from_FEN(cls, cho_formation: Formation, han_formation: Formation, fen: str, player: Camp) -> Board:
+        """
+        Create a board from a Forsyth-Edwards Notation (FEN) string.
+        
+        Args:
+            cho_formation (Formation): Formation of Camp Cho.
+            han_formation (Formation): Formation of Camp Han.
+            fen (str): FEN string representing board state.
+            player (Camp): Camp that the player is playing.
+        
+        Returns:
+            Board: Board initialized with pieces according to FEN.
+        """
+        # Create initial board using existing method
+        board = cls.full_board_from_formations(cho_formation, han_formation, player)
+        for i in range(10):
+            for i2 in range(9):
+                board.__board[i][i2]=None
+        # Parse FEN string
+        parts = fen.split()
+        rows = parts[0].split('/')
+        
+        # Mapping for piece type conversion
+        piece_map = {
+            'k': PieceType.GENERAL,
+            'a': PieceType.GUARD,
+            'e': PieceType.ELEPHANT,
+            'h': PieceType.HORSE,
+            'c': PieceType.CANNON,
+            'r': PieceType.CHARIOT,
+            'p': PieceType.SOLDIER
+        }
+        
+        # Place pieces on board
+        for row in range(NUM_ROWS):
+            col = 0
+            for char in rows[row]:
+                if char.isdigit():
+                    # Skip empty squares
+                    col += int(char)
+                else:
+                    # Determine piece camp and type
+                    camp = Camp.CHO if char.isupper() else Camp.HAN
+                    piece_type = piece_map[char.lower()]
+                    
+                    # Create and place piece
+                    piece = Piece(piece_type, camp)
+                    board.__board[row][col] = piece
+                    col += 1
+        
+        return board
+
+    
     def copy(self) -> Board:
         """
         Return a copied Board class.
@@ -192,6 +246,21 @@ class Board:
                     piece_locations.append(Location(row, col))
         return piece_locations
 
+    def get_king_location(self, camp: Camp) -> List[Location]:
+        """
+        Get locations of camp's kings on the board.
+
+        Returns:
+            List[Location]: List of all locations of the pieces on the board.
+        """
+        king_location = []
+        for row in range(MIN_ROW, MAX_ROW+1):
+            for col in range(MIN_COL, MAX_COL+1):
+                
+                if self.__board[row][col] and self.__board[row][col].camp == camp and (set('楚漢') & set(str(self.get(row,col)))):
+                    king_location.append(Location(row, col))
+        return king_location
+
     def get_piece_locations_for_camp(self, camp: Camp) -> List[Location]:
         """
         Get locations of all pieces with the given camp.
@@ -209,6 +278,19 @@ class Board:
                     piece_locations.append(Location(row, col))
         return piece_locations
 
+    def is_check(self, camp: Camp) -> List[Location]:
+
+        enemy_locations = []
+        king_location = []
+        for row in range(MIN_ROW, MAX_ROW+1):
+            for col in range(MIN_COL, MAX_COL+1):
+                if self.__board[row][col] :
+                    if self.__board[row][col].camp != camp:
+                        enemy_locations.append(Location(row, col))
+                    elif set('楚漢') & set(str(self.get(row, col))):
+                        king_location = Location(row, col)
+        return king_location, enemy_locations            
+        
     @classmethod
     def _generate_half_board(cls, formation: Formation) -> Board:
         """
