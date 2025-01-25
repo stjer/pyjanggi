@@ -38,7 +38,6 @@ class JanggiGame:
         self.board = Board.full_board_from_formations(cho_formation, han_formation, player)
 
         if FEN!="":
-            #대충 FEN따라 보드에 배치하는 내용
             self.turn = Camp.CHO if FEN.split()[1]=="w" else Camp.HAN
             self.board = Board.board_from_FEN(cho_formation, han_formation, FEN, player)
     
@@ -250,6 +249,6 @@ class JanggiGame:
     def is_check(self):
         king_location, enemy_locations = self.board.is_check(self.turn)
         for _ in enemy_locations:
-            if king_location in self.get_all_opponent_destinations(_):
+            if king_location in self.get_all_opponent_destinations(_):#여기서 상대 기물을 잡지 않는 문제가 있기는 함. 추후 수정. 
                 return True
         return False
