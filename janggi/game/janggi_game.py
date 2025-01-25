@@ -17,7 +17,7 @@ class JanggiGame:
     and it can also get all possible moves from a current state of the board.
     """
 
-    def __init__(self, player: Camp, cho_formation: Formation, han_formation: Formation):
+    def __init__(self, player: Camp, cho_formation: Formation, han_formation: Formation, FEN = ""):
         """
         Initialize Janggi game instance.
 
@@ -26,15 +26,23 @@ class JanggiGame:
             cho_formation (Formation): Formation of camp cho.
             han_formation (Formation): Formation of camp han.
         """
+        # FEN 입력이 가능하게 수정.
         self.player = player
+        
         self.cho_formation = cho_formation
         self.han_formation = han_formation
 
         self.turn = Camp.CHO
         self.cho_score = self.han_score = 0.0
         self.log = GameLog(cho_formation, han_formation, player)
-        self.board = Board.full_board_from_formations(
-            cho_formation, han_formation, player)
+        self.board = Board.full_board_from_formations(cho_formation, han_formation, player)
+
+        if FEN!="":
+            #대충 FEN따라 보드에 배치하는 내용
+            self.turn = Camp.CHO if FEN.split()[1]=="w" else Camp.HAN
+            self.board = Board.board_from_FEN(cho_formation, han_formation, FEN, player)
+    
+        
         self.initial_board = self.board.copy()
         self._update_scores()
 
@@ -111,6 +119,21 @@ class JanggiGame:
                     for ms in move_sets]
         return all_dest
 
+    def get_all_opponent_destinations(self, origin: Location) -> List[Location]:
+        """
+        List all possible locations where a piece at given origin can move to.
+
+        Args:
+            origin (Location): Location of the piece to get destionations for.
+
+        Returns:
+            List[Location]: List of all possible locations the piece can go to.
+        """
+        move_sets = self._get_possible_move_sets(origin)
+        all_dest = [ms.get_dest(self.board, origin, self.turn.opponent)
+                    for ms in move_sets]
+        return all_dest
+
     def _update_scores(self):
         """
         Update cho and han's scores by summing up each of their piece's value.
@@ -146,26 +169,43 @@ class JanggiGame:
             raise Exception(f"There is not piece on the location {origin}.")
 
         # Invalidate when the piece does not belong to the current player
-        if piece.camp != self.turn:
-            raise Exception(
-                f"The piece {piece.piece_type} does not belong to the current player {self.turn}.")
+        #if piece.camp != self.turn:
+            #raise Exception(
+            #    f"The piece {piece.piece_type} does not belong to the current player {self.turn}.")
 
         # Get MoveSets based on piece type
-        if piece.piece_type == PieceType.SOLDIER:
-            move_sets = piece.get_soldier_move_sets(
-                origin, self.player == self.turn)
-        elif piece.piece_type == PieceType.HORSE or piece.piece_type == PieceType.ELEPHANT:
-            move_sets = piece.get_jumpy_move_sets()
-        elif piece.piece_type == PieceType.CHARIOT or piece.piece_type == PieceType.CANNON:
-            move_sets = piece.get_straight_move_sets(origin)
-        elif piece.piece_type == PieceType.GENERAL or piece.piece_type == PieceType.GUARD:
-            move_sets = piece.get_castle_move_sets(
-                origin, self.player == self.turn)
+        if piece.camp != self.turn:
+            print(piece.piece_type, piece.camp, "move 추출 대상")
+            if piece.piece_type == PieceType.SOLDIER:
+                move_sets = piece.get_soldier_move_sets(
+                    origin, self.player == self.turn.opponent)
+                for m in move_sets:
+                    print(piece.piece_type, " : ", m.get_dest(bcb.board, p[0], bcb.turn))
+                
+            elif piece.piece_type == PieceType.HORSE or piece.piece_type == PieceType.ELEPHANT:
+                move_sets = piece.get_jumpy_move_sets()
+                for m in move_sets:
+                    print(piece.piece_type, " : ", m.get_dest(bcb.board, p[0], bcb.turn))
+                    
+            elif piece.piece_type == PieceType.CHARIOT or piece.piece_type == PieceType.CANNON:
+                move_sets = piece.get_straight_move_sets(origin)
+                for m in move_sets:
+                    print(piece.piece_type, " : ", m.get_dest(bcb.board, p[0], bcb.turn))
+                    
+            elif piece.piece_type == PieceType.GENERAL or piece.piece_type == PieceType.GUARD:
+                move_sets = piece.get_castle_move_sets(
+                    origin, self.player == self.turn.opponent)
+                for m in move_sets:
+                    print(piece.piece_type, " : ", m.get_dest(bcb.board, p[0], bcb.turn))
 
-        # Filter out all the invalid move sets
-        move_sets = [ms for ms in move_sets if ms.is_valid(
-            self.board, origin, self.turn)]
-        return move_sets
+            # Filter out all the invalid move sets
+            move_sets = [ms for ms in move_sets if ms.is_valid(
+                self.board, origin, self.turn)]
+            return move_sets
+        elif piece.camp == self.turn:
+            print(piece.piece_type, piece.camp)
+        else:
+            raise Exception("NaN")
 
     def _validate_action(self, origin: Location, dest: Location) -> bool:
         """
@@ -206,3 +246,10 @@ class JanggiGame:
 
         # TODO: Invalidate the move makes it enemy's "Janggun"
         return True
+    
+    def is_check(self):
+        king_location, enemy_locations = self.board.is_check(self.turn)
+        for _ in enemy_locations:
+            if king_location in self.get_all_opponent_destinations(_):
+                return True
+        return False
