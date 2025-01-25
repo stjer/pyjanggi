@@ -43,13 +43,13 @@ class Piece:
     The class is capable of getting move sets based on its piece type.
     """
 
-    def __init__(self, piece_type: PieceType):
+    def __init__(self, piece_type: PieceType, camp=None):
         """
         Initialize Piece class by setting the given piece type.
         Camp attribute is later initialized by Board.mark_camp.
         """
         self.piece_type = piece_type
-        self.camp = None
+        self.camp = camp
 
     def __float__(self) -> float:
         """
@@ -144,7 +144,7 @@ class Piece:
         move_sets = [MoveSet([(dr, dc)]) for (dr, dc) in steps]
         # Add castle move sets
         is_in_castle = self._is_in_castle(origin)
-        if is_in_castle > -1:
+        if is_in_castle:
             castle_move_sets = self.get_castle_move_sets(
                 origin, is_in_castle, 1)
             castle_move_sets = filter(_is_forward, castle_move_sets)
@@ -222,6 +222,7 @@ class Piece:
         Returns:s
             List[MoveSet]: All move sets a straight piece can make regardless of validity.
         """
+        #포의 경우 해당 함수를 실행하도록 작성되어 있는데, 이 함수는 포의 움직임을 구현하지 못했다고 생각됩니다.
         def _is_out_of_bound(row: int, col: int):
             return (row < MIN_ROW or row > MAX_ROW or
                     col < MIN_COL or col > MAX_COL)
@@ -243,7 +244,7 @@ class Piece:
             move_sets += _get_move_sets_in_direction(origin, dr, dc)
         # Add castle move sets
         is_in_castle = self._is_in_castle(origin)
-        if is_in_castle > -1:
+        if is_in_castle:
             castle_move_sets = self.get_castle_move_sets(
                 origin, is_in_castle, 2)
             move_sets.extend(castle_move_sets)
@@ -255,14 +256,10 @@ class Piece:
 
     # Return 1 if in bottom castle, 0 if in top castle, -1 if not in csatle
     def _is_in_castle(self, l: Location) -> int:
-        if l.col < CASTLE_MIN_COL and l.col > CASTLE_MAX_COL:
-            return -1
-        elif l.row >= CASTLE_TOP_MIN_ROW and l.row <= CASTLE_TOP_MAX_ROW:
-            return 0
-        elif l.row >= CASTLE_BOT_MIN_ROW and l.row <= CASTLE_BOT_MAX_ROW:
-            return 1
+        if (l.col, l.row) in [(0, 3), (0, 4), (0, 5), (1, 3), (1, 4), (1, 5), (2, 3), (2, 4), (2, 5), (7, 3), (7, 4), (7, 5), (8, 3), (8, 4), (8, 5), (9, 3), (9, 4), (9, 5)]
+            return True#기존 코드는 그냥 출력해보니 0~3줄 -1~4줄 1~3줄 로 이루어져 있어 수정을 함.
         else:
-            return -1
+            return False
 
     def _is_move_diagonal(self, drow: int, dcol: int) -> bool:
         return drow != 0 and dcol != 0 and abs(drow) == abs(dcol)
