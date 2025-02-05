@@ -235,7 +235,7 @@ class JanggiGame:
                     origin, self.player == self.turn.opponent)
 
             # Filter out all the invalid move sets
-            move_sets = [ms for ms in move_sets if ms.is_valid(self.board, origin, self.turn)]
+            move_sets = [ms for ms in move_sets if ms.is_valid(self.board, origin, self.turn.opponent)]
             return move_sets
         else:
             raise Exception("NaN")
