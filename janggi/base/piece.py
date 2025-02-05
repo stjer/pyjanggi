@@ -256,7 +256,7 @@ class Piece:
 
     # Return 1 if in bottom castle, 0 if in top castle, -1 if not in csatle
     def _is_in_castle(self, l: Location) -> int:
-        if (l.col, l.row) in [(0, 3), (0, 4), (0, 5), (1, 3), (1, 4), (1, 5), (2, 3), (2, 4), (2, 5), (7, 3), (7, 4), (7, 5), (8, 3), (8, 4), (8, 5), (9, 3), (9, 4), (9, 5)]
+        if (l.col, l.row) in [(0, 3), (0, 4), (0, 5), (1, 3), (1, 4), (1, 5), (2, 3), (2, 4), (2, 5), (7, 3), (7, 4), (7, 5), (8, 3), (8, 4), (8, 5), (9, 3), (9, 4), (9, 5)]:
             return True#기존 코드는 그냥 출력해보니 0~3줄 -1~4줄 1~3줄 로 이루어져 있어 수정을 함.
         else:
             return False
