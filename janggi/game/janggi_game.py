@@ -38,6 +38,7 @@ class JanggiGame:
         self.board = Board.full_board_from_formations(cho_formation, han_formation, player)
 
         if FEN!="":
+            #대충 FEN따라 보드에 배치하는 내용
             self.turn = Camp.CHO if FEN.split()[1]=="w" else Camp.HAN
             self.board = Board.board_from_FEN(cho_formation, han_formation, FEN, player)
     
@@ -168,26 +169,34 @@ class JanggiGame:
             raise Exception(f"There is not piece on the location {origin}.")
 
         # Invalidate when the piece does not belong to the current player
-        if piece.camp != self.turn:
-            raise Exception(
-                f"The piece {piece.piece_type} does not belong to the current player {self.turn}.")
+        #if piece.camp != self.turn:
+            #raise Exception(
+            #    f"The piece {piece.piece_type} does not belong to the current player {self.turn}.")
 
         # Get MoveSets based on piece type
-        if piece.piece_type == PieceType.SOLDIER:
-            move_sets = piece.get_soldier_move_sets(
-                origin, self.player == self.turn)
-        elif piece.piece_type == PieceType.HORSE or piece.piece_type == PieceType.ELEPHANT:
-            move_sets = piece.get_jumpy_move_sets()
-        elif piece.piece_type == PieceType.CHARIOT or piece.piece_type == PieceType.CANNON:
-            move_sets = piece.get_straight_move_sets(origin)
-        elif piece.piece_type == PieceType.GENERAL or piece.piece_type == PieceType.GUARD:
-            move_sets = piece.get_castle_move_sets(
-                origin, self.player == self.turn)
-
-        # Filter out all the invalid move sets
-        move_sets = [ms for ms in move_sets if ms.is_valid(
-            self.board, origin, self.turn)]
-        return move_sets
+        if piece.camp == self.turn:
+            if piece.piece_type == PieceType.SOLDIER:
+                move_sets = piece.get_soldier_move_sets(
+                    origin, self.player == self.turn.opponent)
+                
+            elif piece.piece_type == PieceType.HORSE or piece.piece_type == PieceType.ELEPHANT:
+                move_sets = piece.get_jumpy_move_sets()
+                   
+            elif piece.piece_type == PieceType.CHARIOT or piece.piece_type == PieceType.CANNON:
+                move_sets = piece.get_straight_move_sets(origin)
+                   
+            elif piece.piece_type == PieceType.GENERAL or piece.piece_type == PieceType.GUARD:
+                move_sets = piece.get_castle_move_sets(
+                    origin, self.player == self.turn.opponent)
+                
+            # Filter out all the invalid move sets
+            move_sets = [ms for ms in move_sets if ms.is_valid(
+                self.board, origin, self.turn)]
+            return move_sets
+        elif piece.camp == self.turn:
+            print(piece.piece_type, piece.camp)
+        else:
+            raise Exception("NaN")
 
     def _get_opponent_possible_move_sets(self, origin: Location) -> List[MoveSet]:
         """
@@ -222,7 +231,6 @@ class JanggiGame:
         if piece.camp != self.turn:
             if piece.piece_type == PieceType.SOLDIER:
                 move_sets = piece.get_soldier_move_sets(origin, self.player == self.turn.opponent)
-                
                 
             elif piece.piece_type == PieceType.HORSE or piece.piece_type == PieceType.ELEPHANT:
                 move_sets = piece.get_jumpy_move_sets()
@@ -283,6 +291,6 @@ class JanggiGame:
     def is_check(self):
         king_location, enemy_locations = self.board.is_check(self.turn)
         for _ in enemy_locations:
-            if king_location in self.get_all_opponent_destinations(_):#여기서 상대 기물을 잡지 않는 문제가 있기는 함. 추후 수정 필요. 
+            if king_location in self.get_all_opponent_destinations(_):
                 return True
         return False
