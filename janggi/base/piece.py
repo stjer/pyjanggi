@@ -167,7 +167,7 @@ class Piece:
         Returns:
             List[MoveSet]: All move sets a castle piece can make regardless of validity.
         """
-        castle_locations = self._castle_locations(is_player)
+        castle_locations = self._castle_locations(True)+self._castle_locations(False)#상대 궁성의 대각선을 쓰지 않는 문제 해결
         move_sets = []
         for dest in castle_locations:
             dr = dest.row - origin.row
@@ -222,7 +222,6 @@ class Piece:
         Returns:s
             List[MoveSet]: All move sets a straight piece can make regardless of validity.
         """
-        #포의 경우 해당 함수를 실행하도록 작성되어 있는데, 이 함수는 포의 움직임을 구현하지 못했다고 생각됩니다.
         def _is_out_of_bound(row: int, col: int):
             return (row < MIN_ROW or row > MAX_ROW or
                     col < MIN_COL or col > MAX_COL)
@@ -237,7 +236,18 @@ class Piece:
                 steps.append((dr, dc))
                 move_sets.append(MoveSet(steps.copy()))
             return move_sets
-
+            
+        def _filter_move_sets(lst):
+            seen = set()
+            result = []
+            
+            for item in lst:
+                str_value = str(item)  # `__str__` 값 가져오기
+                if str_value not in seen:
+                    seen.add(str_value)
+                    result.append(item)
+            
+            return result
         move_sets = []
         # Add regular move sets
         for (dr, dc) in [(0, -1), (0, 1), (-1, 0), (1, 0)]:
@@ -248,28 +258,30 @@ class Piece:
             castle_move_sets = self.get_castle_move_sets(
                 origin, is_in_castle, 2)
             move_sets.extend(castle_move_sets)
-        return move_sets
+        
+        return _filter_move_sets(move_sets)
 
     # **************************************************
     # *********** Castle Helper Functions **************
     # **************************************************
-
-    # Return 1 if in bottom castle, 0 if in top castle, -1 if not in csatle
+ 
     def _is_in_castle(self, l: Location) -> int:
-        if (l.col, l.row) in [(0, 3), (0, 4), (0, 5), (1, 3), (1, 4), (1, 5), (2, 3), (2, 4), (2, 5), (7, 3), (7, 4), (7, 5), (8, 3), (8, 4), (8, 5), (9, 3), (9, 4), (9, 5)]:
-            return True#기존 코드는 그냥 출력해보니 0~3줄 -1~4줄 1~3줄 로 이루어져 있어 수정을 함.
-        else:
-            return False
+        return (
+            CASTLE_MIN_COL <= l.col <= CASTLE_MAX_COL and
+            (CASTLE_TOP_MIN_ROW <= l.row <= CASTLE_TOP_MAX_ROW or
+             CASTLE_BOT_MIN_ROW <= l.row <= CASTLE_BOT_MAX_ROW)
+            )
 
     def _is_move_diagonal(self, drow: int, dcol: int) -> bool:
         return drow != 0 and dcol != 0 and abs(drow) == abs(dcol)
 
     def _is_castle_vertex(self, l: Location) -> bool:
-        return \
-            (l.col == CASTLE_MIN_COL or l.col == CASTLE_MAX_COL) and\
+        return (
+            (l.col == CASTLE_MIN_COL or l.col == CASTLE_MAX_COL) and
             (l.row == CASTLE_TOP_MIN_ROW or l.row == CASTLE_TOP_MAX_ROW or
              l.row == CASTLE_BOT_MIN_ROW or l.row == CASTLE_BOT_MAX_ROW)
-
+            ) or (l.row, l.col) in [CASTLE_TOP_CENTER, CASTLE_BOT_CENTER]
+            
     # Return true if either origin or destination is castle's center
     def _validate_castle_diagonal_move(self, origin: Location, dest: Location) -> bool:
         return (tuple(origin) == CASTLE_TOP_CENTER or
@@ -284,3 +296,4 @@ class Piece:
         min_col = CASTLE_MIN_COL
         max_col = CASTLE_MAX_COL
         return [Location(r, c) for r in range(min_row, max_row + 1) for c in range(min_col, max_col + 1)]
+        
